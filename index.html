@@ -107,17 +107,20 @@
                     containerHeight = containerWidth / aspectRatio;
                 }
 
-                // Устанавливаем размеры только контейнера
+                // Устанавливаем размеры контейнера
                 canvasDiv.style.width = `${containerWidth}px`;
                 canvasDiv.style.height = `${containerHeight}px`;
 
-                // Оставляем canvas с фиксированными размерами
+                // Фиксируем размеры canvas и применяем масштабирование
                 canvas.style.width = "720px";
                 canvas.style.height = "1280px";
                 canvas.width = 720;
                 canvas.height = 1280;
+                const scale = Math.min(containerWidth / 720, containerHeight / 1280);
+                canvas.style.transform = `scale(${scale})`;
+                canvas.style.transformOrigin = "0 0";
 
-                console.log(`CanvasDiv resized to: ${containerWidth}x${containerHeight}, Canvas: 720px x 1280px`);
+                console.log(`CanvasDiv resized to: ${containerWidth}x${containerHeight}, Canvas: 720px x 1280px, Scale: ${scale}`);
 
                 // Уведомляем Construct 2 о фиксированных размерах
                 if (window.cr_sizeCanvas) {
