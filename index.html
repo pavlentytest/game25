@@ -18,6 +18,7 @@
         * {
             padding: 0;
             margin: 0;
+            box-sizing: border-box;
         }
         html, body {
             background: #000;
@@ -27,25 +28,30 @@
             -ms-touch-action: none;
             height: 100vh;
             width: 100vw;
+            position: relative;
         }
         #c2canvasdiv {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100vw;
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            position: relative;
             background: #000;
         }
-        canvas {
-            touch-action-delay: none;
-            touch-action: none;
-            -ms-touch-action: none;
-            max-width: 100vw;
-            max-height: 100vh;
-            width: auto;
-            height: auto;
-            display: block;
+        canvas#c2canvas {
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            max-width: 100vw !important;
+            max-height: 100vh !important;
+            width: auto !important;
+            height: auto !important;
+            display: block !important;
+            transform-origin: center !important;
         }
     </style>
     
@@ -64,7 +70,7 @@
     </script>
     
     <div id="c2canvasdiv">
-        <canvas id="c2canvas">
+        <canvas id="c2canvas" width="720" height="1280">
             <h1>Your browser does not appear to support HTML5. Try upgrading your browser to the latest version. <a href="http://www.whatbrowser.org">What is a browser?</a>
             <br/><br/><a href="http://www.microsoft.com/windows/internet-explorer/default.aspx">Microsoft Internet Explorer</a><br/>
             <a href="http://www.mozilla.com/firefox/">Mozilla Firefox</a><br/>
@@ -85,46 +91,75 @@
         jQuery(document).ready(function () {
             cr_createRuntime("c2canvas");
 
-            function resizeCanvas() {
+            function resizeAndCenterCanvas() {
                 const canvas = document.getElementById("c2canvas");
                 if (!canvas) {
-                    console.error("Canvas element not found!");
+                    console.error("Canvas not found!");
                     return;
                 }
 
                 const aspectRatio = 720 / 1280;
-                let newWidth = window.innerWidth;
-                let newHeight = window.innerHeight;
-                const windowAspectRatio = newWidth / newHeight;
+                const windowAspectRatio = window.innerWidth / window.innerHeight;
+                let scale = 1;
 
+                // Вычисляем scale для letterbox (с чёрными полосами)
                 if (windowAspectRatio > aspectRatio) {
-                    newWidth = newHeight * aspectRatio;
+                    scale = window.innerHeight / 1280;
                 } else {
-                    newHeight = newWidth / aspectRatio;
+                    scale = window.innerWidth / 720;
                 }
 
-                canvas.style.width = `${newWidth}px`;
-                canvas.style.height = `${newHeight}px`;
-                canvas.width = newWidth;
-                canvas.height = newHeight;
+                // Фиксируем базовые размеры и применяем scale
+                canvas.style.width = `720px`;
+                canvas.style.height = `1280px`;
+                canvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
 
-                console.log(`Canvas resized to: ${newWidth}x${newHeight}`);
+                // Устанавливаем внутренние размеры для Construct 2 (оригинальные)
+                canvas.width = 720;
+                canvas.height = 1280;
 
+                // Форсируем позиционирование
+                canvas.style.position = "absolute";
+                canvas.style.top = "50%";
+                canvas.style.left = "50%";
+
+                console.log(`Canvas scaled to: ${scale}, transform=${canvas.style.transform}, position=${canvas.style.position}, left=${canvas.style.left}, top=${canvas.style.top}`);
+
+                // Уведомляем Construct 2 (оригинальные размеры)
                 if (window.cr_sizeCanvas) {
-                    console.log(`Calling cr_sizeCanvas(${newWidth}, ${newHeight})`);
-                    cr_sizeCanvas(newWidth, newHeight);
-                } else {
-                    console.warn("cr_sizeCanvas is not available!");
+                    cr_sizeCanvas(720, 1280);
                 }
             }
 
-            console.log("Initializing canvas resize...");
-            resizeCanvas();
+            // Инициализация
+            console.log("Initializing canvas resize and center...");
+            resizeAndCenterCanvas();
+
+            // Обработка ресайза окна
             let resizeTimeout;
             window.addEventListener("resize", function () {
                 clearTimeout(resizeTimeout);
-                resizeTimeout = setTimeout(resizeCanvas, 100);
+                resizeTimeout = setTimeout(resizeAndCenterCanvas, 100);
             });
+
+            // Агрессивное форсирование центрирования (каждые 100 мс, чтобы перезаписывать Construct 2)
+            setInterval(() => {
+                const canvas = document.getElementById("c2canvas");
+                if (canvas && (canvas.style.left !== "50%" || canvas.style.top !== "50%" || !canvas.style.transform.includes("scale"))) {
+                    canvas.style.position = "absolute !important";
+                    canvas.style.top = "50% !important";
+                    canvas.style.left = "50% !important";
+                    console.log("Forced canvas centering (Construct 2 override detected)");
+                }
+            }, 100);
+
+            // Проверка через 2 секунды для финальной отладки
+            setTimeout(() => {
+                const canvas = document.getElementById("c2canvas");
+                if (canvas) {
+                    console.log(`Final canvas state: width=${canvas.style.width}, height=${canvas.style.height}, transform=${canvas.style.transform}, left=${canvas.style.left}, top=${canvas.style.top}`);
+                }
+            }, 2000);
         });
 
         function onVisibilityChanged() {
