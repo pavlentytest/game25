@@ -46,12 +46,10 @@
             top: 50% !important;
             left: 50% !important;
             transform: translate(-50%, -50%) !important;
+            transform-origin: center !important;
+            display: block !important;
             max-width: 100vw !important;
             max-height: 100vh !important;
-            width: auto !important;
-            height: auto !important;
-            display: block !important;
-            transform-origin: center !important;
         }
     </style>
     
@@ -102,31 +100,30 @@
                 const windowAspectRatio = window.innerWidth / window.innerHeight;
                 let scale = 1;
 
-                // Вычисляем scale для letterbox (с чёрными полосами)
+                // Вычисляем масштаб для letterbox
                 if (windowAspectRatio > aspectRatio) {
                     scale = window.innerHeight / 1280;
                 } else {
                     scale = window.innerWidth / 720;
                 }
 
-                // Фиксируем базовые размеры и применяем scale
+                // Применяем стили для центрирования и масштабирования
                 canvas.style.width = `720px`;
                 canvas.style.height = `1280px`;
-                canvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
-
-                // Устанавливаем внутренние размеры для Construct 2 (оригинальные)
-                canvas.width = 720;
-                canvas.height = 1280;
-
-                // Форсируем позиционирование
                 canvas.style.position = "absolute";
                 canvas.style.top = "50%";
                 canvas.style.left = "50%";
+                canvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
 
-                console.log(`Canvas scaled to: ${scale}, transform=${canvas.style.transform}, position=${canvas.style.position}, left=${canvas.style.left}, top=${canvas.style.top}`);
+                // Оставляем внутренние размеры для Construct 2
+                canvas.width = 720;
+                canvas.height = 1280;
 
-                // Уведомляем Construct 2 (оригинальные размеры)
+                console.log(`Canvas updated: scale=${scale}, transform=${canvas.style.transform}, left=${canvas.style.left}, top=${canvas.style.top}`);
+
+                // Уведомляем Construct 2
                 if (window.cr_sizeCanvas) {
+                    console.log(`Calling cr_sizeCanvas(720, 1280)`);
                     cr_sizeCanvas(720, 1280);
                 }
             }
@@ -135,25 +132,34 @@
             console.log("Initializing canvas resize and center...");
             resizeAndCenterCanvas();
 
-            // Обработка ресайза окна
+            // Обработка ресайза
             let resizeTimeout;
             window.addEventListener("resize", function () {
                 clearTimeout(resizeTimeout);
                 resizeTimeout = setTimeout(resizeAndCenterCanvas, 100);
             });
 
-            // Агрессивное форсирование центрирования (каждые 100 мс, чтобы перезаписывать Construct 2)
-            setInterval(() => {
-                const canvas = document.getElementById("c2canvas");
-                if (canvas && (canvas.style.left !== "50%" || canvas.style.top !== "50%" || !canvas.style.transform.includes("scale"))) {
-                    canvas.style.position = "absolute !important";
-                    canvas.style.top = "50% !important";
-                    canvas.style.left = "50% !important";
-                    console.log("Forced canvas centering (Construct 2 override detected)");
-                }
-            }, 100);
+            // MutationObserver для отслеживания изменений стилей canvas
+            const canvas = document.getElementById("c2canvas");
+            if (canvas) {
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach((mutation) => {
+                        if (mutation.type === "attributes" && mutation.attributeName === "style") {
+                            const canvas = mutation.target;
+                            if (canvas.style.left !== "50%" || canvas.style.top !== "50%" || !canvas.style.transform.includes("translate(-50%, -50%)")) {
+                                canvas.style.position = "absolute";
+                                canvas.style.top = "50%";
+                                canvas.style.left = "50%";
+                                canvas.style.transform = `translate(-50%, -50%) scale(${canvas.style.transform.match(/scale\(([^)]+)\)/)?.[1] || 1})`;
+                                console.log("MutationObserver: Forced canvas centering due to style change");
+                            }
+                        }
+                    });
+                });
+                observer.observe(canvas, { attributes: true, attributeFilter: ["style"] });
+            }
 
-            // Проверка через 2 секунды для финальной отладки
+            // Проверка стилей через 2 секунды
             setTimeout(() => {
                 const canvas = document.getElementById("c2canvas");
                 if (canvas) {
