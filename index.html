@@ -28,10 +28,9 @@
             -ms-touch-action: none;
             height: 100vh;
             width: 100vw;
-            position: relative;
         }
         #c2canvasdiv {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
@@ -42,7 +41,7 @@
             background: #000;
         }
         canvas#c2canvas {
-            position: absolute !important;
+            position: fixed !important;
             top: 50% !important;
             left: 50% !important;
             transform: translate(-50%, -50%) !important;
@@ -50,6 +49,8 @@
             display: block !important;
             max-width: 100vw !important;
             max-height: 100vh !important;
+            width: 720px !important;
+            height: 1280px !important;
         }
     </style>
     
@@ -107,21 +108,18 @@
                     scale = window.innerWidth / 720;
                 }
 
-                // Применяем стили для центрирования и масштабирования
+                // Применяем стили
                 canvas.style.width = `720px`;
                 canvas.style.height = `1280px`;
-                canvas.style.position = "absolute";
+                canvas.style.position = "fixed";
                 canvas.style.top = "50%";
                 canvas.style.left = "50%";
                 canvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
-
-                // Оставляем внутренние размеры для Construct 2
                 canvas.width = 720;
                 canvas.height = 1280;
 
-                console.log(`Canvas updated: scale=${scale}, transform=${canvas.style.transform}, left=${canvas.style.left}, top=${canvas.style.top}`);
+                console.log(`Canvas updated: scale=${scale}, transform=${canvas.style.transform}, left=${canvas.style.left}, top=${canvas.style.top}, width=${canvas.style.width}, height=${canvas.style.height}`);
 
-                // Уведомляем Construct 2
                 if (window.cr_sizeCanvas) {
                     console.log(`Calling cr_sizeCanvas(720, 1280)`);
                     cr_sizeCanvas(720, 1280);
@@ -132,32 +130,24 @@
             console.log("Initializing canvas resize and center...");
             resizeAndCenterCanvas();
 
-            // Обработка ресайза
+            // Ресайз
             let resizeTimeout;
             window.addEventListener("resize", function () {
                 clearTimeout(resizeTimeout);
                 resizeTimeout = setTimeout(resizeAndCenterCanvas, 100);
             });
 
-            // MutationObserver для отслеживания изменений стилей canvas
-            const canvas = document.getElementById("c2canvas");
-            if (canvas) {
-                const observer = new MutationObserver((mutations) => {
-                    mutations.forEach((mutation) => {
-                        if (mutation.type === "attributes" && mutation.attributeName === "style") {
-                            const canvas = mutation.target;
-                            if (canvas.style.left !== "50%" || canvas.style.top !== "50%" || !canvas.style.transform.includes("translate(-50%, -50%)")) {
-                                canvas.style.position = "absolute";
-                                canvas.style.top = "50%";
-                                canvas.style.left = "50%";
-                                canvas.style.transform = `translate(-50%, -50%) scale(${canvas.style.transform.match(/scale\(([^)]+)\)/)?.[1] || 1})`;
-                                console.log("MutationObserver: Forced canvas centering due to style change");
-                            }
-                        }
-                    });
-                });
-                observer.observe(canvas, { attributes: true, attributeFilter: ["style"] });
-            }
+            // Форсируем центрирование каждые 50 мс
+            setInterval(() => {
+                const canvas = document.getElementById("c2canvas");
+                if (canvas && (canvas.style.left !== "50%" || canvas.style.top !== "50%" || !canvas.style.transform.includes("translate(-50%, -50%)"))) {
+                    canvas.style.position = "fixed";
+                    canvas.style.top = "50%";
+                    canvas.style.left = "50%";
+                    canvas.style.transform = canvas.style.transform.replace(/translate\([^)]+\)/, "translate(-50%, -50%)");
+                    console.log("setInterval: Forced canvas centering");
+                }
+            }, 50);
 
             // Проверка стилей через 2 секунды
             setTimeout(() => {
