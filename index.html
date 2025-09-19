@@ -48,6 +48,7 @@
             display: block !important;
             max-width: none !important;
             max-height: none !important;
+            transform-origin: center !important;
         }
     </style>
     
@@ -100,31 +101,29 @@
                 let containerHeight = window.innerHeight;
                 const windowAspectRatio = containerWidth / containerHeight;
 
-                // Вычисляем размеры контейнера с сохранением пропорций
                 if (windowAspectRatio > aspectRatio) {
                     containerWidth = containerHeight * aspectRatio;
                 } else {
                     containerHeight = containerWidth / aspectRatio;
                 }
 
-                // Устанавливаем размеры контейнера
                 canvasDiv.style.width = `${containerWidth}px`;
                 canvasDiv.style.height = `${containerHeight}px`;
 
-                // Фиксируем размеры canvas и применяем масштабирование
-                canvas.style.width = "720px";
-                canvas.style.height = "1280px";
+                // Фиксируем внутренние размеры canvas
                 canvas.width = 720;
                 canvas.height = 1280;
+                canvas.style.width = "720px";
+                canvas.style.height = "1280px";
+
+                // Вычисляем scale и применяем
                 const scale = Math.min(containerWidth / 720, containerHeight / 1280);
                 canvas.style.transform = `scale(${scale})`;
-                canvas.style.transformOrigin = "0 0";
 
-                console.log(`CanvasDiv resized to: ${containerWidth}x${containerHeight}, Canvas: 720px x 1280px, Scale: ${scale}`);
+                console.log(`CanvasDiv resized to: ${containerWidth}x${containerHeight}, Canvas: 720x1280, Scale: ${scale}`);
 
-                // Уведомляем Construct 2 о фиксированных размерах
+                // Уведомляем Construct 2 о размерах
                 if (window.cr_sizeCanvas) {
-                    console.log(`Calling cr_sizeCanvas(720, 1280)`);
                     cr_sizeCanvas(720, 1280);
                 }
             }
