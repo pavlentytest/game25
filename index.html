@@ -39,7 +39,7 @@
             justify-content: center;
             align-items: center;
             background: #000;
-            overflow: hidden; /* Предотвращает выход canvas за пределы */
+            overflow: hidden;
         }
         canvas#c2canvas {
             position: relative !important;
@@ -96,30 +96,30 @@
                 }
 
                 const aspectRatio = 720 / 1280;
-                let newWidth = window.innerWidth;
-                let newHeight = window.innerHeight;
-                const windowAspectRatio = newWidth / newHeight;
+                let containerWidth = window.innerWidth;
+                let containerHeight = window.innerHeight;
+                const windowAspectRatio = containerWidth / containerHeight;
 
                 // Вычисляем размеры контейнера с сохранением пропорций
                 if (windowAspectRatio > aspectRatio) {
-                    newWidth = newHeight * aspectRatio;
+                    containerWidth = containerHeight * aspectRatio;
                 } else {
-                    newHeight = newWidth / aspectRatio;
+                    containerHeight = containerWidth / aspectRatio;
                 }
 
-                // Устанавливаем размеры контейнера
-                canvasDiv.style.width = `${newWidth}px`;
-                canvasDiv.style.height = `${newHeight}px`;
+                // Устанавливаем размеры только контейнера
+                canvasDiv.style.width = `${containerWidth}px`;
+                canvasDiv.style.height = `${containerHeight}px`;
 
-                // Оставляем canvas с исходными размерами
+                // Оставляем canvas с фиксированными размерами
                 canvas.style.width = "720px";
                 canvas.style.height = "1280px";
                 canvas.width = 720;
                 canvas.height = 1280;
 
-                console.log(`CanvasDiv resized to: ${newWidth}x${newHeight}, Canvas: ${canvas.style.width}x${canvas.style.height}`);
+                console.log(`CanvasDiv resized to: ${containerWidth}x${containerHeight}, Canvas: 720px x 1280px`);
 
-                // Уведомляем Construct 2 (оригинальные размеры)
+                // Уведомляем Construct 2 о фиксированных размерах
                 if (window.cr_sizeCanvas) {
                     console.log(`Calling cr_sizeCanvas(720, 1280)`);
                     cr_sizeCanvas(720, 1280);
