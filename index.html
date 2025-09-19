@@ -25,8 +25,8 @@
             overflow: hidden;
             touch-action: none;
             -ms-touch-action: none;
-            height: 100%;
-            width: 100%;
+            height: 100vh;
+            width: 100vw;
         }
         #c2canvasdiv {
             width: 100vw;
@@ -34,6 +34,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            position: relative;
+            background: #000;
         }
         canvas {
             touch-action-delay: none;
@@ -43,6 +45,7 @@
             max-height: 100vh;
             width: auto;
             height: auto;
+            display: block;
         }
     </style>
     
@@ -53,7 +56,6 @@
     <div id="fb-root"></div>
     
     <script>
-        // Issue a warning if trying to preview an exported project on disk.
         (function(){
             if (window.location.protocol.substr(0, 4) === "file") {
                 alert("Exported games won't work until you upload them. (When running on the file:/// protocol, browsers block many features from working for security reasons.)");
@@ -85,6 +87,11 @@
 
             function resizeCanvas() {
                 const canvas = document.getElementById("c2canvas");
+                if (!canvas) {
+                    console.error("Canvas element not found!");
+                    return;
+                }
+
                 const aspectRatio = 720 / 1280;
                 let newWidth = window.innerWidth;
                 let newHeight = window.innerHeight;
@@ -98,14 +105,26 @@
 
                 canvas.style.width = `${newWidth}px`;
                 canvas.style.height = `${newHeight}px`;
+                canvas.width = newWidth;
+                canvas.height = newHeight;
+
+                console.log(`Canvas resized to: ${newWidth}x${newHeight}`);
 
                 if (window.cr_sizeCanvas) {
+                    console.log(`Calling cr_sizeCanvas(${newWidth}, ${newHeight})`);
                     cr_sizeCanvas(newWidth, newHeight);
+                } else {
+                    console.warn("cr_sizeCanvas is not available!");
                 }
             }
 
+            console.log("Initializing canvas resize...");
             resizeCanvas();
-            window.addEventListener("resize", resizeCanvas);
+            let resizeTimeout;
+            window.addEventListener("resize", function () {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(resizeCanvas, 100);
+            });
         });
 
         function onVisibilityChanged() {
@@ -113,7 +132,7 @@
                 cr_setSuspended(true);
             else
                 cr_setSuspended(false);
-        };
+        }
 
         document.addEventListener("visibilitychange", onVisibilityChanged, false);
         document.addEventListener("mozvisibilitychange", onVisibilityChanged, false);
@@ -122,12 +141,10 @@
 
         function OnRegisterSWError(e) {
             console.warn("Failed to register service worker: ", e);
-        };
+        }
 
         window.C2_RegisterSW = function C2_RegisterSW() {
-            if (!navigator.serviceWorker)
-                return;
-
+            if (!navigator.serviceWorker) return;
             try {
                 navigator.serviceWorker.register("sw.js", { scope: "./" })
                     .then(function (reg) {
