@@ -49,8 +49,6 @@
             display: block !important;
             max-width: 100vw !important;
             max-height: 100vh !important;
-            width: 720px !important;
-            height: 1280px !important;
         }
     </style>
     
@@ -98,37 +96,36 @@
                 }
 
                 const aspectRatio = 720 / 1280;
-                const windowAspectRatio = window.innerWidth / window.innerHeight;
-                let scale = 1;
+                let newWidth = window.innerWidth;
+                let newHeight = window.innerHeight;
+                const windowAspectRatio = newWidth / newHeight;
 
-                // Вычисляем масштаб для letterbox
+                // Сохраняем пропорции 720:1280
                 if (windowAspectRatio > aspectRatio) {
-                    scale = window.innerHeight / 1280;
+                    newWidth = newHeight * aspectRatio; // Ограничиваем по высоте
                 } else {
-                    scale = window.innerWidth / 720;
+                    newHeight = newWidth / aspectRatio; // Ограничиваем по ширине
                 }
 
-                // Применяем стили
-                canvas.style.width = `720px`;
-                canvas.style.height = `1280px`;
-                canvas.style.position = "fixed";
-                canvas.style.top = "50%";
-                canvas.style.left = "50%";
-                canvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
-                canvas.width = 720;
-                canvas.height = 1280;
+                // Устанавливаем размеры canvas
+                canvas.style.width = `${newWidth}px`;
+                canvas.style.height = `${newHeight}px`;
+                canvas.width = Math.round(newWidth); // Синхронизация внутренних размеров
+                canvas.height = Math.round(newHeight);
 
-                console.log(`Canvas updated: scale=${scale}, transform=${canvas.style.transform}, left=${canvas.style.left}, top=${canvas.style.top}, width=${canvas.style.width}, height=${canvas.style.height}`);
+                // Центрирование уже задано в CSS
+                console.log(`Canvas resized to: ${newWidth}x${newHeight}, width=${canvas.style.width}, height=${canvas.style.height}`);
 
+                // Уведомляем Construct 2 о новом размере
                 if (window.cr_sizeCanvas) {
-                    console.log(`Calling cr_sizeCanvas(720, 1280)`);
-                    cr_sizeCanvas(720, 1280);
+                    console.log(`Calling cr_sizeCanvas(${Math.round(newWidth)}, ${Math.round(newHeight)})`);
+                    cr_sizeCanvas(Math.round(newWidth), Math.round(newHeight));
                 }
             }
 
-            // Инициализация
-            console.log("Initializing canvas resize and center...");
-            resizeAndCenterCanvas();
+            // Инициализация с задержкой
+            console.log("Initializing canvas resize and center with delay...");
+            setTimeout(resizeAndCenterCanvas, 500);
 
             // Ресайз
             let resizeTimeout;
@@ -140,11 +137,11 @@
             // Форсируем центрирование каждые 50 мс
             setInterval(() => {
                 const canvas = document.getElementById("c2canvas");
-                if (canvas && (canvas.style.left !== "50%" || canvas.style.top !== "50%" || !canvas.style.transform.includes("translate(-50%, -50%)"))) {
+                if (canvas && (canvas.style.left !== "50%" || canvas.style.top !== "50%")) {
                     canvas.style.position = "fixed";
                     canvas.style.top = "50%";
                     canvas.style.left = "50%";
-                    canvas.style.transform = canvas.style.transform.replace(/translate\([^)]+\)/, "translate(-50%, -50%)");
+                    canvas.style.transform = "translate(-50%, -50%)";
                     console.log("setInterval: Forced canvas centering");
                 }
             }, 50);
